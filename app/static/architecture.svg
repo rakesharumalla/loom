@@ -1,0 +1,128 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1500 990" font-family="Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#5b6573"/>
+    </marker>
+    <style>
+      .band { fill:#fafbfc; stroke:#d0d7de; stroke-width:1.2; rx:14; }
+      .bl { font-size:15px; font-weight:700; fill:#24292f; }
+      .bs { font-size:12.5px; fill:#57606a; }
+      .t { font-size:14.5px; font-weight:700; text-anchor:middle; }
+      .s { font-size:12.5px; text-anchor:middle; }
+      .loom rect, rect.loom { fill:#efe9ff; stroke:#7c5cd6; }
+      .dbx rect, rect.dbx { fill:#fff1ec; stroke:#ff3621; }
+      .con rect, rect.con { fill:#eef6ff; stroke:#3b82f6; }
+      .pipe rect, rect.pipe { fill:#ecfdf3; stroke:#16a34a; }
+      .loom text { fill:#2b1f52; } .dbx text { fill:#3a1410; } .con text { fill:#0f2a52; } .pipe text { fill:#0b3b1e; }
+      rect { stroke-width:1.5; rx:9; }
+      .ln { stroke:#5b6573; stroke-width:1.6; fill:none; marker-end:url(#a); }
+      .dl { stroke:#5b6573; stroke-width:1.4; fill:none; stroke-dasharray:5 4; marker-end:url(#a); }
+      .lbl { font-size:12px; fill:#57606a; }
+    </style>
+  </defs>
+
+  <text x="40" y="38" font-size="22" font-weight="700" fill="#24292f">Loom on Databricks: new storage layer</text>
+  <text x="40" y="60" class="bs">Purple = implemented in Loom (this repo) · Orange = Databricks building blocks · Green = pipelines · Blue = existing consumers</text>
+
+  <!-- ===== Consumers -->
+  <g class="con">
+    <rect x="80" y="80" width="300" height="56"/><text class="t" x="230" y="104">AI agents</text><text class="s" x="230" y="123">MCP clients</text>
+    <rect x="415" y="80" width="300" height="56"/><text class="t" x="565" y="104">Web / AI Hub</text><text class="s" x="565" y="123">demo UI in the app</text>
+    <rect x="750" y="80" width="300" height="56"/><text class="t" x="900" y="104">Batch services</text><text class="s" x="900" y="123">Python SDK</text>
+  </g>
+
+  <!-- ===== Facade band -->
+  <rect class="band" x="40" y="160" width="1050" height="192"/>
+  <text class="bl" x="58" y="346">Loom facade on Databricks Apps</text>
+  <text class="bs" x="300" y="346">one contract · surfaces differ only in transport</text>
+  <g class="loom">
+    <rect x="80" y="196" width="300" height="44"/><text class="t" x="230" y="223">MCP tools  /mcp</text>
+    <rect x="415" y="196" width="300" height="44"/><text class="t" x="565" y="223">UI routes  /ui/*</text>
+    <rect x="750" y="196" width="300" height="44"/><text class="t" x="900" y="223">REST  /v1/*</text>
+    <rect x="80" y="270" width="450" height="58"/><text class="t" x="305" y="294">Identity</text>
+    <text class="s" x="305" y="313">OAuth token verified with Databricks (SCIM /Me) · never from the model</text>
+    <rect x="560" y="270" width="490" height="58"/><text class="t" x="805" y="294">Consumer contract</text>
+    <text class="s" x="805" y="313">configure · retrieve · contribute (+ admin: approve promotion)</text>
+  </g>
+  <path class="ln" d="M230 136 V196"/><path class="ln" d="M565 136 V196"/><path class="ln" d="M900 136 V196"/>
+  <path class="ln" d="M230 240 V270"/><path class="ln" d="M565 240 L470 270"/><path class="ln" d="M900 240 L520 270"/>
+  <path class="ln" d="M530 299 H560"/>
+
+  <!-- ===== Control plane -->
+  <rect class="band" x="40" y="366" width="1050" height="114"/>
+  <text class="bl" x="58" y="384">Control plane: implemented in Loom</text>
+  <g class="loom">
+    <rect x="60" y="398" width="160" height="66"/><text class="t" x="140" y="424">Space policy</text><text class="s" x="140" y="443">single authority</text><text class="s" x="140" y="458">deny by default</text>
+    <rect x="232" y="398" width="160" height="66"/><text class="t" x="312" y="424">Composer</text><text class="s" x="312" y="443">read-time, per caller</text><text class="s" x="312" y="458">parallel fan-out · RRF</text>
+    <rect x="404" y="398" width="160" height="66"/><text class="t" x="484" y="424">Guardrails</text><text class="s" x="484" y="443">redact · cap · block</text><text class="s" x="484" y="458">rate limit</text>
+    <rect x="576" y="398" width="160" height="66"/><text class="t" x="656" y="424">Conflict resolver</text><text class="s" x="656" y="443">authority → time</text><text class="s" x="656" y="458">→ human review</text>
+    <rect x="748" y="398" width="160" height="66"/><text class="t" x="828" y="424">Promotion</text><text class="s" x="828" y="443">approver needs write</text><text class="s" x="828" y="458">on target space</text>
+    <rect x="920" y="398" width="150" height="66"/><text class="t" x="995" y="424">Audit + trace</text><text class="s" x="995" y="443">every decision</text><text class="s" x="995" y="458">and why</text>
+  </g>
+  <path class="ln" d="M805 328 V398"/>
+
+  <!-- ===== Ports -->
+  <text class="bl" x="585" y="534" text-anchor="middle">Storage ports</text>
+  <text class="bs" x="585" y="551" text-anchor="middle">(swap surface)</text>
+  <g class="loom">
+    <rect x="60" y="518" width="135" height="40"/><text class="t" x="127" y="543">ControlPlane</text>
+    <rect x="205" y="518" width="135" height="40"/><text class="t" x="272" y="543">StoragePort</text>
+    <rect x="350" y="518" width="130" height="40"/><text class="t" x="415" y="543">SearchPort</text>
+    <rect x="690" y="518" width="170" height="40"/><text class="t" x="775" y="543">MemoryPort</text>
+    <rect x="880" y="518" width="170" height="40"/><text class="t" x="965" y="543">SessionPort</text>
+  </g>
+  <path class="ln" d="M585 480 V500 H127 V518"/><path class="ln" d="M585 500 H272 V518"/><path class="ln" d="M585 500 H415 V518"/>
+  <path class="ln" d="M585 500 H775 V518"/><path class="ln" d="M585 500 H965 V518"/><path class="ln" d="M585 464 V500"/>
+
+  <!-- ===== Databricks storage -->
+  <rect class="band" x="40" y="582" width="1050" height="292" style="fill:#fffaf8"/>
+  <text class="bl" x="1075" y="862" text-anchor="end">Databricks storage layer</text><text class="bs" x="860" y="862" text-anchor="end">replaces MongoDB Atlas · Amazon S3 · Bedrock KBs + OpenSearch</text>
+  <g class="dbx">
+    <rect x="60" y="616" width="420" height="220"/>
+    <text class="t" x="270" y="640">Lakebase Postgres 18: one ACID transaction</text>
+    <rect x="76" y="652" width="388" height="40" style="fill:#fff"/><text class="s" x="270" y="676">files · versions · snapshots · overlays · leases · inline text</text>
+    <rect x="76" y="700" width="388" height="40" style="fill:#fff"/><text class="s" x="270" y="724">spaces · members · guardrails · bindings · audit · conflicts</text>
+    <rect x="76" y="748" width="388" height="48" style="fill:#fff"/><text class="t" x="270" y="768" style="font-size:13.5px">Lakebase Search</text>
+    <text class="s" x="270" y="786">lakebase_ann (vector) + lakebase_bm25 (keyword) · RLS</text>
+    <text class="s" x="270" y="822">branches → ephemeral spaces · scale to zero</text>
+    <rect x="500" y="616" width="170" height="100"/><text class="t" x="585" y="648">UC Volume</text><text class="s" x="585" y="670">large raw files</text><text class="s" x="585" y="688">content-addressed</text><text class="s" x="585" y="704">write-once</text>
+    <rect x="690" y="616" width="170" height="100"/><text class="t" x="775" y="648">Managed memory</text><text class="s" x="775" y="670">one store per space</text><text class="s" x="775" y="688">BM25 search</text><text class="s" x="775" y="704">store-level ACL</text>
+    <rect x="880" y="616" width="170" height="100"/><text class="t" x="965" y="648">Managed sessions</text><text class="s" x="965" y="670">short-term state</text><text class="s" x="965" y="688">listable (feeds</text><text class="s" x="965" y="704">distillation)</text>
+    <rect x="500" y="736" width="550" height="100"/><text class="t" x="775" y="766">Foundation Model APIs</text>
+    <text class="s" x="775" y="788">databricks-gte-large-en: query + chunk embeddings (1024-d)</text>
+    <text class="s" x="775" y="808">databricks-claude-sonnet-5-5: distillation of transcripts</text>
+  </g>
+  <path class="ln" d="M127 558 V616"/><path class="ln" d="M272 558 V616"/><path class="ln" d="M300 558 V574 H530 V616"/>
+  <path class="ln" d="M415 558 V616"/><path class="ln" d="M775 558 V616"/><path class="ln" d="M965 558 V616"/>
+  <text class="lbl" x="536" y="604">large files</text>
+
+  <!-- ===== Pipelines -->
+  <rect class="band" x="1120" y="160" width="340" height="320"/>
+  <text class="bl" x="1138" y="182">Pipelines: Lakeflow Jobs</text>
+  <text class="bs" x="1138" y="200">run on demand, on a schedule, or on source change</text>
+  <g class="pipe">
+    <rect x="1140" y="214" width="300" height="72"/><text class="t" x="1290" y="238">Ingest job</text><text class="s" x="1290" y="257">Volume sources → parse · chunk · embed</text><text class="s" x="1290" y="274">hash-incremental; deletes removed files</text>
+    <rect x="1140" y="300" width="300" height="72"/><text class="t" x="1290" y="324">Distill job</text><text class="s" x="1290" y="343">sessions → facts + markdown lessons</text><text class="s" x="1290" y="360">→ staging → promotion (human approves)</text>
+    <rect x="1140" y="386" width="300" height="72"/><text class="t" x="1290" y="410">Eval + benchmark</text><text class="s" x="1290" y="429">MLflow hit@k / MRR</text><text class="s" x="1290" y="446">recall vs exact, latency</text>
+  </g>
+  <path class="ln" d="M1140 336 H1090 V299 H1050"/><text class="lbl" x="1055" y="292">contribute</text>
+  <path class="ln" d="M1140 250 H1100 V538 H1050"/><text class="lbl" x="1104" y="528">via ports</text>
+
+  <!-- ===== Lakehouse -->
+  <rect class="band" x="1120" y="582" width="340" height="292"/>
+  <text class="bl" x="1138" y="604">Lakehouse: Unity Catalog</text>
+  <g class="dbx">
+    <rect x="1140" y="620" width="300" height="80"/><text class="t" x="1290" y="648">Analytics views · dashboards</text><text class="s" x="1290" y="668">resolution outcomes · space usage</text><text class="s" x="1290" y="685">excluded reasons · low-rated sources</text>
+    <rect x="1140" y="740" width="300" height="80"/><text class="t" x="1290" y="768">Lakebase CDF → Delta</text><text class="s" x="1290" y="788">lb_*_history tables (audit, traces,</text><text class="s" x="1290" y="805">conflicts, promotions, feedback)</text>
+  </g>
+  <path class="ln" d="M1290 740 V700"/>
+  <path class="ln" d="M400 836 V905 H1290 V820"/><text class="lbl" x="560" y="898">control-plane tables stream to Delta (REPLICA IDENTITY FULL; chunks excluded)</text>
+
+  <!-- ===== legend -->
+  <g transform="translate(40,945)">
+    <rect class="loom" x="0" y="0" width="22" height="16"/><text class="bs" x="30" y="13">implemented in Loom</text>
+    <rect class="dbx" x="190" y="0" width="22" height="16"/><text class="bs" x="220" y="13">Databricks</text>
+    <rect class="pipe" x="320" y="0" width="22" height="16"/><text class="bs" x="350" y="13">pipeline (Loom code on Lakeflow Jobs)</text>
+    <rect class="con" x="610" y="0" width="22" height="16"/><text class="bs" x="640" y="13">existing consumers (unchanged)</text>
+  </g>
+</svg>

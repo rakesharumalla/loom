@@ -1,0 +1,17 @@
+# Databricks App entry point (source = repo root so the app can import the Loom package).
+command: ["python", "app/run.py"]
+env:
+  - name: LOOM_CATALOG
+    value: loom_catalog
+  - name: LOOM_LAKEBASE_PROJECT
+    value: loom-demo
+  - name: MLFLOW_DISABLE_AGENT_HINT
+    value: "1"
+  - name: LOOM_INGEST_JOB_ID
+    valueFrom: ingest-job
+  - name: LOOM_DISTILL_JOB_ID
+    valueFrom: distill-job
+  - name: LOOM_BENCH_JOB_ID
+    valueFrom: bench-job
+  - name: LOOM_EVAL_JOB_ID
+    valueFrom: eval-job

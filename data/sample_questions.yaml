@@ -1,0 +1,12 @@
+# Step 4 acceptance: 10 sample questions; `expect` is the source (space + path) that must appear in the top k.
+questions:
+  - {persona: bob, q: "What is the daily withdrawal limit for verified retail customers?", expect: {space: company, path: policies/withdrawal-limits.md}}
+  - {persona: alice, q: "When do we need to send originator and beneficiary data for a transfer?", expect: {space: company, path: policies/travel-rule.md}}
+  - {persona: carol, q: "What counts as a SEV2 incident and how fast do we update the status page?", expect: {space: company, path: policies/incident-severity.md}}
+  - {persona: bob, q: "Withdrawal queue backlog over 5000 requests, what are the runbook steps?", expect: {space: company, path: runbooks/withdrawal-queue.md}}
+  - {persona: bob, q: "What do I tell a customer whose withdrawal is delayed?", expect: {space: "team:care", path: withdrawal-delay-macro.md}}
+  - {persona: alice, q: "How do we triage AML transaction monitoring alerts?", expect: {space: "team:risk", path: aml-alert-triage.md}}
+  - {persona: carol, q: "Primary market data feed is lagging, what should trading ops do?", expect: {space: "team:markets", path: market-data-outage.md}}
+  - {persona: alice, q: "How does withdrawals v2 batch on-chain transactions?", expect: {space: "project:atlas", path: withdrawals-v2-design.md}}
+  - {persona: carol, q: "How does Borealis consolidate the vendor market data feeds?", expect: {space: "project:borealis", path: feed-architecture.md}}
+  - {persona: bob, q: "Who handles chargebacks for card purchases?", expect: {space: "team:care", path: refund-process.md}}

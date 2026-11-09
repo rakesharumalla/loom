@@ -1,0 +1,37 @@
+# Synthetic facts contributed through the public `contribute` verb, as each persona.
+# observed_at is when the fact was stated; it drives time precedence in conflict resolution.
+facts:
+  # conflict 1: official policy (company KB, 2026-07-01, $50,000) vs Bob's newer personal note
+  - {as: bob, target: "personal:bob", subject: withdrawal_limit.retail.daily, observed_at: "2026-09-20T10:00:00Z",
+     content: "Retail customers can withdraw up to $25,000 per day."}
+  # conflict 2: company runbook step 3 vs Bob's newer personal note (authority wins, flagged newer)
+  - {as: bob, target: "personal:bob", subject: runbook.withdrawal_queue.step3, observed_at: "2026-09-25T09:00:00Z",
+     content: "Step 3: drain the withdrawal queue before restarting the signer, otherwise requests are duplicated."}
+  # conflict 3: time precedence inside the Care team space
+  - {as: bob, target: "team:care", subject: refund.card.sla, observed_at: "2026-05-02T12:00:00Z",
+     content: "Card refunds post to the customer's card within 5 business days."}
+  - {as: bob, target: "team:care", subject: refund.card.sla, observed_at: "2026-09-10T12:00:00Z",
+     content: "Card refunds post to the customer's card within 3 business days."}
+  # (conflict 4, a tie, lives in the Atlas KB: two docs, same authority and date, different batch windows)
+  - {as: alice, target: "project:atlas", subject: atlas.pilot_assets, observed_at: "2026-08-05T08:00:00Z",
+     content: "The Atlas withdrawals v2 pilot covers BTC and ETH only."}
+  - {as: alice, target: "team:risk", subject: risk.sanctions_escalation, observed_at: "2026-06-01T08:00:00Z",
+     content: "Potential sanctions hits are escalated to the compliance officer within one hour."}
+  - {as: carol, target: "team:markets", subject: markets.feed_failover, observed_at: "2026-07-12T08:00:00Z",
+     content: "Fail over to the secondary market data vendor when primary feed lag exceeds 2 seconds."}
+  - {as: carol, target: "project:borealis", subject: borealis.tick_drop, observed_at: "2026-06-20T08:00:00Z",
+     content: "Borealis drops market data ticks older than 500 milliseconds."}
+  # preferences (personal)
+  - {as: alice, target: "personal:alice", subject: preference.answer_style, observed_at: "2026-09-01T08:00:00Z",
+     content: "Alice wants policy answers to cite the policy name and its effective date."}
+  - {as: carol, target: "personal:carol", subject: preference.answer_style, observed_at: "2026-09-01T08:00:00Z",
+     content: "Carol prefers answers that list affected trading pairs first."}
+
+# corpus directory -> space
+corpus_spaces:
+  company: company
+  team-risk: "team:risk"
+  team-care: "team:care"
+  team-markets: "team:markets"
+  project-atlas: "project:atlas"
+  project-borealis: "project:borealis"

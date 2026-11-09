@@ -1,0 +1,25 @@
+# Loom on Databricks demo: Asset Bundle (jobs + app). Lakebase project, identities, UC objects and
+# Lakebase Search are created by scripts/setup.sh (Search enable is a one-way UI action).
+bundle:
+  name: loom-databricks-demo
+
+variables:
+  catalog: {default: loom_catalog}
+  schema: {default: loom}
+  lakebase_project: {default: loom-demo}
+
+include:
+  - resources/*.yml
+
+sync:
+  exclude:
+    - .venv/**
+    - bench/results*.md
+    - data/corpus_gen/**
+
+targets:
+  dev:
+    mode: development
+    default: true
+    workspace:
+      profile: DEFAULT

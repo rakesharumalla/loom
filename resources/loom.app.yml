@@ -1,0 +1,26 @@
+resources:
+  apps:
+    loom_app:
+      name: loom-demo
+      description: "Loom facade (REST + MCP) and demo UI over Databricks storage ports"
+      source_code_path: ..
+      # Declared here so `bundle deploy` keeps them (a deploy replaces the app's resource list).
+      resources:
+        - name: postgres
+          postgres:
+            branch: projects/${var.lakebase_project}/branches/production
+            database: projects/${var.lakebase_project}/branches/production/databases/databricks-postgres
+            permission: CAN_CONNECT_AND_CREATE
+        - name: embeddings
+          serving_endpoint: {name: databricks-gte-large-en, permission: CAN_QUERY}
+        - name: llm
+          serving_endpoint: {name: databricks-claude-sonnet-5-5, permission: CAN_QUERY}
+        # Job ids reach the app via app.yaml valueFrom; the UI links each pipeline card to its job page.
+        - name: ingest-job
+          job: {id: "${resources.jobs.loom_ingest.id}", permission: CAN_VIEW}
+        - name: distill-job
+          job: {id: "${resources.jobs.loom_distill.id}", permission: CAN_VIEW}
+        - name: bench-job
+          job: {id: "${resources.jobs.loom_bench.id}", permission: CAN_VIEW}
+        - name: eval-job
+          job: {id: "${resources.jobs.loom_eval.id}", permission: CAN_VIEW}

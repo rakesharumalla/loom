@@ -1,0 +1,29 @@
+%%{init: {"theme": "base", "themeVariables": {"fontFamily": "Helvetica, Arial, sans-serif", "fontSize": "15px", "actorBkg": "#efe9ff", "actorBorder": "#7c5cd6", "noteBkgColor": "#fff8e6", "noteBorderColor": "#d29922"}}}%%
+sequenceDiagram
+    autonumber
+    actor A as Agent / UI / Service
+    participant F as Loom facade<br/>(REST · MCP · SDK)
+    participant P as Space policy<br/>(Loom)
+    participant S as Lakebase Search<br/>(pooled KB index)
+    participant M as Managed memory<br/>(store per space)
+    participant SE as Managed sessions
+    participant L as Lakebase<br/>(audit · traces)
+
+    A->>F: retrieve(query, hints) + OAuth token
+    F->>F: verify token with Databricks → user + groups
+    F->>P: which spaces may this caller read?
+    P-->>F: included: personal, project, team, company<br/>excluded: others (deny by default / hint)
+    par fan-out in parallel
+        F->>S: one hybrid query (vector + BM25),<br/>filtered to included spaces + caller principals
+        S-->>F: ranked chunks (RLS re-checks access)
+    and
+        F->>M: BM25 search in each included space's store
+        M-->>F: facts / preferences
+    and
+        F->>SE: (if session_id) recent turns
+        SE-->>F: short-term state
+    end
+    F->>F: RRF fusion → per-space guardrails (redact, cap)<br/>→ dedupe → conflict resolution (authority → time → human)
+    F->>L: audit rows + composition trace (one transaction)
+    F-->>A: results with provenance + score breakdown + trace
+    Note over F,L: Nothing is copied between spaces. Results are references into each space's own backend.

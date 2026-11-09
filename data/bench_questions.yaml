@@ -1,0 +1,151 @@
+questions:
+- q: How many confirmations before we credit a deposit on Solzenbri?
+  kb_dir: company
+  space: company
+  path: assets/solzenbri-chain.md
+  persona: bob
+- q: How long does TekoralumTektek trade in post-only mode after listing?
+  kb_dir: company
+  space: company
+  path: listings/tekoralum-tektek.md
+  persona: bob
+- q: What is the first-withdrawal hold for customers from the Mirmirora region?
+  kb_dir: company
+  space: company
+  path: policies/mirmirora-region-holds.md
+  persona: bob
+- q: How many confirmations before we credit a deposit on Mirvivor?
+  kb_dir: company
+  space: company
+  path: assets/mirvivor-chain.md
+  persona: bob
+- q: How many confirmations before we credit a deposit on Pelkator?
+  kb_dir: company
+  space: company
+  path: assets/pelkator-chain.md
+  persona: bob
+- q: A customer sees error Quanyxmir-27 in wallet; what should support tell them?
+  kb_dir: team-care
+  space: team:care
+  path: macros/wallet-quanyxmir.md
+  persona: bob
+- q: A customer sees error Lumtordex-67 in earn; what should support tell them?
+  kb_dir: team-care
+  space: team:care
+  path: macros/earn-lumtordex.md
+  persona: bob
+- q: A customer sees error Solkalum-20 in pro; what should support tell them?
+  kb_dir: team-care
+  space: team:care
+  path: macros/pro-solkalum.md
+  persona: bob
+- q: A customer sees error Tekkator-84 in card; what should support tell them?
+  kb_dir: team-care
+  space: team:care
+  path: macros/card-tekkator.md
+  persona: bob
+- q: A customer sees error Mirpeldex-76 in pro; what should support tell them?
+  kb_dir: team-care
+  space: team:care
+  path: macros/pro-mirpeldex.md
+  persona: bob
+- q: What deposit sequence characterizes the Viraxdex laundering typology?
+  kb_dir: team-risk
+  space: team:risk
+  path: typologies/viraxdex.md
+  persona: alice
+- q: What deposit sequence characterizes the Zenzenlum laundering typology?
+  kb_dir: team-risk
+  space: team:risk
+  path: typologies/zenzenlum.md
+  persona: alice
+- q: What deposit sequence characterizes the Brinyxvor laundering typology?
+  kb_dir: team-risk
+  space: team:risk
+  path: typologies/brinyxvor.md
+  persona: alice
+- q: What deposit sequence characterizes the Teklummir laundering typology?
+  kb_dir: team-risk
+  space: team:risk
+  path: typologies/teklummir.md
+  persona: alice
+- q: What deposit sequence characterizes the Kanyxlum laundering typology?
+  kb_dir: team-risk
+  space: team:risk
+  path: typologies/kanyxlum.md
+  persona: alice
+- q: What is the maximum spread we quote on Lumoraora-USD?
+  kb_dir: team-markets
+  space: team:markets
+  path: pairs/lumoraora-usd.md
+  persona: carol
+- q: What is the maximum spread we quote on Pelvorlum-USD?
+  kb_dir: team-markets
+  space: team:markets
+  path: pairs/pelvorlum-usd.md
+  persona: carol
+- q: What is the maximum spread we quote on Brimirbri-USD?
+  kb_dir: team-markets
+  space: team:markets
+  path: pairs/brimirbri-usd.md
+  persona: carol
+- q: What is the maximum spread we quote on Kabribri-USD?
+  kb_dir: team-markets
+  space: team:markets
+  path: pairs/kabribri-usd.md
+  persona: carol
+- q: What is the maximum spread we quote on Nyxmirqua-USD?
+  kb_dir: team-markets
+  space: team:markets
+  path: pairs/nyxmirqua-usd.md
+  persona: carol
+- q: How many times does the Atlas Brimirrax component retry a failed signing request?
+  kb_dir: project-atlas
+  space: project:atlas
+  path: components/brimirrax.md
+  persona: alice
+- q: How many times does the Atlas Pellummir component retry a failed signing request?
+  kb_dir: project-atlas
+  space: project:atlas
+  path: components/pellummir.md
+  persona: alice
+- q: How many times does the Atlas Miroraqua component retry a failed signing request?
+  kb_dir: project-atlas
+  space: project:atlas
+  path: components/miroraqua.md
+  persona: alice
+- q: How many times does the Atlas Solmirpel component retry a failed signing request?
+  kb_dir: project-atlas
+  space: project:atlas
+  path: components/solmirpel.md
+  persona: alice
+- q: How many times does the Atlas Lumsollum component retry a failed signing request?
+  kb_dir: project-atlas
+  space: project:atlas
+  path: components/lumsollum.md
+  persona: alice
+- q: What latency does market data vendor Quazenora commit to?
+  kb_dir: project-borealis
+  space: project:borealis
+  path: vendors/quazenora.md
+  persona: carol
+- q: What latency does market data vendor Britortek commit to?
+  kb_dir: project-borealis
+  space: project:borealis
+  path: vendors/britortek.md
+  persona: carol
+- q: What latency does market data vendor Britorlum commit to?
+  kb_dir: project-borealis
+  space: project:borealis
+  path: vendors/britorlum.md
+  persona: carol
+- q: What latency does market data vendor Zennyxvi commit to?
+  kb_dir: project-borealis
+  space: project:borealis
+  path: vendors/zennyxvi.md
+  persona: carol
+- q: What latency does market data vendor Orazenlum commit to?
+  kb_dir: project-borealis
+  space: project:borealis
+  path: vendors/orazenlum.md
+  persona: carol

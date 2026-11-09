@@ -1,0 +1,62 @@
+x-env: &env
+  environment_key: loom
+  spec:
+    client: "4"
+    dependencies:
+      - databricks-sdk==0.149.0
+      - databricks-agentbricks==0.4.0
+      - psycopg[binary,pool]>=3.2
+      - pydantic>=2.7
+      - pyyaml>=6
+      - fastapi>=0.115
+      - mcp>=2.2
+      - httpx>=0.27
+
+resources:
+  jobs:
+    loom_ingest:
+      name: loom-ingest
+      description: "Incremental ingest: Volume sources -> Lakebase files/chunks"
+      environments: [*env]
+      tasks:
+        - task_key: ingest
+          environment_key: loom
+          max_retries: 3   # first attempt can abort loading psycopg's bundled libpq on serverless
+          spark_python_task: {python_file: ../pipelines/ingest_job.py}
+
+    loom_distill:
+      name: loom-distill
+      description: "Semi-offline distillation: managed sessions -> facts + markdown lessons (staging + promotion)"
+      environments: [*env]
+      tasks:
+        - task_key: distill
+          environment_key: loom
+          max_retries: 3
+          spark_python_task: {python_file: ../pipelines/distill_job.py}
+
+    loom_bench:
+      name: loom-bench
+      description: "In-region Lakebase Search benchmark (writes bench/results markdown to the job output)"
+      environments: [*env]
+      tasks:
+        - task_key: bench
+          environment_key: loom
+          max_retries: 3
+          spark_python_task:
+            python_file: ../bench/benchmark.py
+            parameters: ["--skip-build", "--out", "/tmp/results.md"]
+
+    loom_eval:
+      name: loom-eval
+      description: "MLflow evaluation of composed retrieval over labeled questions (in-region)"
+      environments:
+        - environment_key: loom
+          spec:
+            client: "4"
+            dependencies: [databricks-sdk==0.149.0, databricks-agentbricks==0.4.0, "psycopg[binary,pool]>=3.2",
+                           pydantic>=2.7, pyyaml>=6, fastapi>=0.115, mcp>=2.2, httpx>=0.27, mlflow>=3]
+      tasks:
+        - task_key: eval
+          environment_key: loom
+          max_retries: 3
+          spark_python_task: {python_file: ../pipelines/eval_job.py}

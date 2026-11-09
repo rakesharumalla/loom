@@ -1,0 +1,73 @@
+# Synthetic spaces for the demo. Applied through the public `configure` verb (scripts/seed.py).
+# Personas: alice (loom-compliance, team risk, project atlas), bob (loom-support, team care, project atlas),
+# carol (loom-trading-ops, team markets, project borealis), admin (platform admin), service (batch consumer).
+common_guardrails:
+  account_redact: &acct {pattern: '\bACCT-\d{6}\b', label: ACCOUNT}
+  email_redact: &email {pattern: '[\w.+-]+@[\w-]+\.[\w.]+', label: EMAIL}
+  secret_block: &secret '(?i)(seed phrase|private key|api[_ -]?key)\s*[:=]'
+
+spaces:
+  - space: {scope: company, name: "Company", owner: admin}
+    members:
+      - {principal: loom-compliance, kind: group, perm: read}
+      - {principal: loom-support, kind: group, perm: read}
+      - {principal: loom-trading-ops, kind: group, perm: read}
+      - {principal: service, kind: user, perm: read}
+      - {principal: alice, kind: user, perm: write}       # compliance lead approves company promotions
+    guardrails:
+      read: {redact: [*acct]}
+      write: {allowed_kinds: [fact, lesson, file], block_patterns: [*secret], max_chars: 20000}
+    bindings: [kb, memory]
+
+  - space: {scope: team, key: risk, name: "Risk team", owner: alice}
+    members: [{principal: alice, kind: user, perm: admin}, {principal: service, kind: user, perm: read}]
+    guardrails: {read: {redact: [*acct]}, write: {block_patterns: [*secret]}}
+    bindings: [kb, memory]
+
+  - space: {scope: team, key: care, name: "Care team", owner: bob}
+    members: [{principal: bob, kind: user, perm: admin}, {principal: service, kind: user, perm: write}]
+    guardrails:
+      read: {redact: [*acct, *email], max_items: 6}
+      write: {block_patterns: [*secret]}
+    bindings: [kb, memory]
+
+  - space: {scope: team, key: markets, name: "Markets team", owner: carol}
+    members: [{principal: carol, kind: user, perm: admin}, {principal: service, kind: user, perm: read}]
+    guardrails: {read: {}, write: {block_patterns: [*secret]}}
+    bindings: [kb, memory]
+
+  - space: {scope: project, key: atlas, name: "Project Atlas (withdrawals v2)", owner: alice}
+    members:
+      - {principal: alice, kind: user, perm: write}
+      - {principal: bob, kind: user, perm: write}
+      - {principal: service, kind: user, perm: read}
+    guardrails:
+      read: {redact: [*acct]}
+      write: {allowed_kinds: [fact, lesson, file], max_chars: 8000, block_patterns: [*secret]}
+    bindings: [kb, memory]
+
+  - space: {scope: project, key: borealis, name: "Project Borealis (market data)", owner: carol}
+    members: [{principal: carol, kind: user, perm: write}, {principal: service, kind: user, perm: read}]
+    guardrails: {read: {}, write: {block_patterns: [*secret]}}
+    bindings: [kb, memory]
+
+  - space: {scope: personal, key: alice, name: "Alice (personal)", owner: alice}
+    members: [{principal: alice, kind: user, perm: admin}]
+    guardrails: {read: {}, write: {rate_limit_per_minute: 30, block_patterns: [*secret]}}
+    bindings: [kb, memory, sessions]
+
+  - space: {scope: personal, key: bob, name: "Bob (personal)", owner: bob}
+    members: [{principal: bob, kind: user, perm: admin}]
+    guardrails: {read: {}, write: {rate_limit_per_minute: 30, block_patterns: [*secret]}}
+    bindings: [kb, memory, sessions]
+
+  - space: {scope: personal, key: carol, name: "Carol (personal)", owner: carol}
+    members: [{principal: carol, kind: user, perm: admin}]
+    guardrails: {read: {}, write: {rate_limit_per_minute: 30, block_patterns: [*secret]}}
+    bindings: [kb, memory, sessions]
+
+  # staging space for the batch/distillation identity; distilled output reaches shared spaces only via promotion
+  - space: {scope: personal, key: service, name: "Distillation staging (service)", owner: service}
+    members: [{principal: service, kind: user, perm: admin}]
+    guardrails: {read: {}, write: {block_patterns: [*secret], allowed_kinds: [fact, lesson]}}
+    bindings: [kb, memory]

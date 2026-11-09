@@ -1,0 +1,32 @@
+# Five synthetic agent sessions about one recurring incident. Seeded into managed agent sessions
+# (metadata kind=incident_transcript) so the distillation job reads them from the session stores.
+transcripts:
+  - actor: bob
+    session_id: inc-2026-08-03-bob
+    turns:
+      - {role: user, content: "Withdrawals for ETH are piling up, queue depth is 6,200 and growing. We upgraded eth-node-2 to v1.14 about 20 minutes ago."}
+      - {role: assistant, content: "Check the signer logs for RPC timeouts and confirm the node is at chain tip."}
+      - {role: user, content: "Signer shows 'context deadline exceeded' calling the node. Node is synced, block height matches the explorers."}
+      - {role: user, content: "Restarting the signer did not help. Restarting the withdrawal batcher fixed it: it was still pinned to the old node IP from before the upgrade. Queue drained in 12 minutes."}
+  - actor: bob
+    session_id: inc-2026-08-21-bob
+    turns:
+      - {role: user, content: "Withdrawal queue stuck again after the BTC node upgrade. Depth 5,400. Signer timing out."}
+      - {role: assistant, content: "Last time the batcher held a stale RPC connection. Is the batcher connected to the upgraded node's old address?"}
+      - {role: user, content: "Yes. Batcher restart resolved it. I drained the queue gradually at 200 requests per minute to avoid fee spikes."}
+  - actor: bob
+    session_id: inc-2026-09-09-bob
+    turns:
+      - {role: user, content: "Customers report delayed withdrawals. Queue depth 7,000. Infra upgraded two nodes at once this morning."}
+      - {role: user, content: "Signer RPC timeouts. Following the runbook I restarted the signer first, no effect. Restarting the batcher reconnected it and the queue started draining."}
+      - {role: user, content: "Root cause: the batcher caches the node RPC endpoint at startup, so after a node upgrade changes the IP it keeps calling the old one."}
+  - actor: carol
+    session_id: inc-2026-09-14-carol
+    turns:
+      - {role: user, content: "Trading desk sees large withdrawal backlog alerts for SOL after a node upgrade. Signer errors: connection refused."}
+      - {role: user, content: "Payments on-call restarted the withdrawal batcher, queue recovered. Confirmed node was healthy the whole time."}
+  - actor: carol
+    session_id: inc-2026-09-30-carol
+    turns:
+      - {role: user, content: "Withdrawal queue stuck after node upgrade, again. Depth 5,100."}
+      - {role: user, content: "Checked node sync (fine), restarted batcher, drained at 200/min. Recommend making batcher restart part of the node upgrade runbook."}

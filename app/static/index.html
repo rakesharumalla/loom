@@ -1,0 +1,713 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Loom on Databricks</title>
+<link rel="icon" href="data:,">
+<style>
+  :root { --bg:#0d1117; --card:#161b22; --card2:#1c2230; --line:#2d3540; --text:#e6edf3; --muted:#8b949e; --accent:#ff5a3c; --accent-soft:#3a1d16;
+          --loom:#a78bfa; --loom-soft:#2a2145; --ok:#3fb950; --ok-soft:#12261a; --no:#f85149; --no-soft:#3a1517;
+          --warn:#d29922; --warn-soft:#2e2410; --kb:#58a6ff; --mem:#3fb950; --sess:#e3a03a; }
+  * { box-sizing:border-box; }
+  button { color:inherit; font-family:inherit; }
+  body { margin:0; font:16px/1.5 -apple-system, "Segoe UI", Inter, Roboto, sans-serif; background:var(--bg); color:var(--text); }
+  a { color:inherit; }
+  /* header */
+  header { background:var(--card); border-bottom:1px solid var(--line); position:sticky; top:0; z-index:5; }
+  .top { display:flex; align-items:center; gap:20px; padding:12px 28px; }
+  .brand { font-weight:800; font-size:19px; white-space:nowrap; } .brand small { font-weight:500; color:var(--muted); font-size:13px; margin-left:8px; }
+  .personas { display:flex; gap:6px; margin-left:auto; align-items:center; }
+  .personas .lbl { color:var(--muted); font-size:13px; margin-right:4px; }
+  #personas { display:flex; gap:6px; }
+  .pbtn { border:1px solid var(--line); background:var(--card); border-radius:999px; padding:6px 14px 6px 6px; cursor:pointer;
+          display:flex; align-items:center; gap:8px; font-size:15px; }
+  .pbtn .av { width:26px; height:26px; border-radius:50%; display:grid; place-items:center; color:#fff; font-weight:700; font-size:13px; }
+  .pbtn.on { border-color:var(--accent); box-shadow:0 0 0 2px #ff5a3c55; }
+  nav.tabs { display:flex; gap:4px; padding:0 22px; }
+  nav.tabs button { border:0; background:none; padding:10px 16px; font-size:15px; color:var(--muted); cursor:pointer; border-bottom:3px solid transparent; }
+  nav.tabs button.on { color:var(--text); border-bottom-color:var(--accent); font-weight:600; }
+  /* layout */
+  main { padding:20px 28px 40px; max-width:1500px; margin:0 auto; }
+  .page { display:none; } .page.on { display:block; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px 18px; margin-bottom:16px; }
+  .card h3 { margin:0 0 10px; font-size:16px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .grid { display:grid; grid-template-columns: minmax(0,1.55fr) minmax(0,1fr); gap:16px; align-items:start; }
+  .grid2 { display:grid; grid-template-columns: 1fr 1fr; gap:16px; align-items:start; }
+  .muted { color:var(--muted); } .small { font-size:13px; } .mono { font-family:ui-monospace, Menlo, monospace; font-size:12.5px; }
+  .tag { font-size:11.5px; font-weight:600; padding:2px 8px; border-radius:999px; text-decoration:none; white-space:nowrap; }
+  .tag.loom { background:var(--loom-soft); color:var(--loom); } .tag.dbx { background:var(--accent-soft); color:#ff9b85; }
+  /* identity strip */
+  .who { display:flex; gap:10px; flex-wrap:wrap; align-items:center; font-size:14px; }
+  .chip { border:1px solid var(--line); border-radius:999px; padding:3px 10px; font-size:13px; background:var(--card2); white-space:nowrap; }
+  .chip.read { border-color:#1f5f33; background:var(--ok-soft); } .chip.write { border-color:#2ea043; background:#164a28; font-weight:600; }
+  /* query bar */
+  .qbar { display:flex; gap:10px; align-items:stretch; flex-wrap:wrap; }
+  .qbar input[type=text] { flex:1; min-width:320px; font-size:17px; padding:12px 14px; border:1px solid var(--line); border-radius:10px; }
+  select, input, textarea { font:inherit; border:1px solid var(--line); border-radius:8px; padding:8px 10px; background:var(--card2); color:var(--text); }
+  .scope { display:flex; gap:8px; align-items:center; border:1px dashed var(--line); border-radius:10px; padding:4px 10px; }
+  .scope select { padding:6px 8px; font-size:14px; }
+  .go { background:var(--accent); color:#fff; border:0; border-radius:10px; padding:10px 20px; font-size:16px; font-weight:600; cursor:pointer; }
+  .go.secondary { background:#30363d; } .go:disabled { opacity:.5; cursor:wait; }
+  .examples { margin-top:10px; display:flex; gap:6px; flex-wrap:wrap; }
+  .examples button { border:1px solid var(--line); background:var(--card2); border-radius:999px; padding:4px 12px; font-size:13px; cursor:pointer; }
+  .help { font-size:13px; color:var(--muted); margin-top:8px; }
+  .help b { color:var(--text); }
+  /* results */
+  .res { border:1px solid var(--line); border-left:4px solid var(--kb); border-radius:10px; padding:10px 12px; margin-bottom:10px; cursor:pointer; background:var(--card2); }
+  .res.memory { border-left-color:var(--mem); } .res.sessions { border-left-color:var(--sess); }
+  .res.superseded { opacity:.65; }
+  .res .head { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  .res .title { font-weight:650; }
+  .badge { font-size:11.5px; padding:1px 8px; border-radius:999px; background:#2a313c; color:#c9d1d9; white-space:nowrap; }
+  .badge.kb { background:#13233d; color:var(--kb); } .badge.memory { background:var(--ok-soft); color:var(--mem); } .badge.sessions { background:var(--warn-soft); color:var(--sess); }
+  .badge.sup { background:var(--warn-soft); color:var(--warn); font-weight:600; } .badge.red { background:var(--no-soft); color:var(--no); }
+  .res .snip { color:#c9d1d9; margin-top:4px; font-size:14.5px; }
+  .res .more { display:none; margin-top:8px; border-top:1px dashed var(--line); padding-top:8px; }
+  .res.open .more { display:block; }
+  .scores { display:flex; gap:14px; flex-wrap:wrap; font-size:13px; color:var(--muted); }
+  .scores b { color:var(--text); }
+  pre.content { white-space:pre-wrap; font-size:13.5px; background:var(--card2); border-radius:8px; padding:10px; margin:8px 0 0; max-height:260px; overflow:auto; }
+  /* side panel tabs */
+  .subtabs { display:flex; gap:4px; border-bottom:1px solid var(--line); margin:-4px 0 12px; }
+  .subtabs button { border:0; background:none; padding:8px 12px; cursor:pointer; color:var(--muted); border-bottom:2px solid transparent; font-size:14px; }
+  .subtabs button.on { color:var(--text); border-bottom-color:var(--loom); font-weight:600; }
+  .count { background:#2a313c; border-radius:999px; padding:0 7px; font-size:12px; margin-left:4px; }
+  .sp { display:grid; grid-template-columns: 22px 1fr; gap:4px 8px; padding:8px 0; border-bottom:1px solid var(--line); }
+  .sp:last-child { border-bottom:0; } .dot { width:12px; height:12px; border-radius:50%; margin-top:5px; }
+  .dot.in { background:var(--ok); } .dot.out { background:var(--no); }
+  .conf { border:1px solid var(--line); border-radius:10px; padding:10px 12px; margin-bottom:10px; }
+  .conf .rule { font-weight:700; } .cand { display:flex; gap:8px; font-size:13.5px; padding:3px 0; }
+  .cand .win { color:var(--ok); font-weight:700; } .cand .lose { color:var(--muted); text-decoration:line-through; }
+  table { width:100%; border-collapse:collapse; font-size:14px; } th, td { text-align:left; padding:7px 8px; border-bottom:1px solid var(--line); vertical-align:top; }
+  th { color:var(--muted); font-weight:600; font-size:13px; }
+  .empty { color:var(--muted); padding:20px; text-align:center; }
+  .kv { display:grid; grid-template-columns: max-content 1fr; gap:4px 14px; font-size:14px; }
+  .out { margin-top:10px; font-size:14px; } .ok { color:var(--ok); font-weight:600; } .bad { color:var(--no); font-weight:600; }
+  .steps { counter-reset:s; } .step { position:relative; padding-left:34px; margin-bottom:14px; }
+  .step:before { counter-increment:s; content:counter(s); position:absolute; left:0; top:0; width:24px; height:24px; border-radius:50%;
+                 background:var(--loom); color:#fff; display:grid; place-items:center; font-size:13px; font-weight:700; }
+  .arch img { width:100%; border:1px solid var(--line); border-radius:10px; background:#fff; padding:8px; }
+  .spinner { display:inline-block; width:14px; height:14px; border:2px solid #444c56; border-top-color:var(--accent); border-radius:50%; animation:spin .8s linear infinite; vertical-align:-2px; }
+  .chip { color:var(--text); } summary { cursor:pointer; } a { color:var(--kb); }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  /* guided demo */
+  .story { display:grid; grid-template-columns: 260px 1fr; gap:18px; align-items:start; }
+  .stepnav { position:sticky; top:118px; }
+  .stepnav button { display:flex; gap:10px; width:100%; text-align:left; border:1px solid var(--line); background:var(--card2); border-radius:10px;
+                    padding:10px 12px; margin-bottom:8px; cursor:pointer; font-size:14.5px; align-items:center; }
+  .stepnav button .n { width:24px; height:24px; border-radius:50%; background:#2a313c; display:grid; place-items:center; font-weight:700; font-size:13px; flex:none; }
+  .stepnav button.on { border-color:var(--accent); box-shadow:0 0 0 2px #ff5a3c55; }
+  .stepnav button.on .n { background:var(--accent); color:#fff; } .stepnav button.done .n { background:var(--ok); color:#fff; }
+  .layers { display:grid; grid-template-columns: repeat(4, 1fr); gap:8px; margin:6px 0 16px; }
+  .layer { border:1px dashed var(--line); border-radius:10px; padding:8px 10px; color:#6e7681; background:var(--card2); min-height:68px; }
+  .layer .ln { font-weight:700; font-size:13px; text-transform:uppercase; letter-spacing:.04em; }
+  .layer .cm { font-size:12.5px; margin-top:2px; }
+  .layer.on { border-style:solid; color:var(--text); background:var(--card2); }
+  .layer.on.c { border-color:#58a6ff; background:#0f2238; } .layer.on.l { border-color:var(--loom); background:var(--loom-soft); }
+  .layer.on.p { border-color:#8b6fe0; background:#221b3a; } .layer.on.d { border-color:var(--accent); background:var(--accent-soft); }
+  .say { font-size:19px; font-weight:650; margin:0 0 6px; } .notice { color:#c9d1d9; margin:0 0 12px; }
+  .vs { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  .mini { border:1px solid var(--line); border-radius:10px; padding:10px 12px; background:var(--card2); }
+  .mini h4 { margin:0 0 6px; font-size:15px; display:flex; gap:8px; align-items:center; }
+  .src { font-size:13.5px; padding:3px 0; border-bottom:1px dashed var(--line); } .src:last-child { border:0; }
+  /* show queries */
+  details.queries > summary { font-size:14px; font-weight:600; }
+  .qsum { display:flex; gap:6px; flex-wrap:wrap; align-items:center; margin:10px 0 4px; font-size:13px; }
+  .qcall { border:1px solid var(--line); border-left:4px solid var(--kb); border-radius:8px; margin-top:8px; background:var(--card2); }
+  .qcall.rest { border-left-color:var(--accent); } .qcall.note { border-left-color:var(--muted); }
+  .qcall .qh { display:flex; gap:8px; align-items:center; padding:6px 10px; font-size:13px; flex-wrap:wrap; }
+  .qcall pre { margin:0; padding:8px 10px; border-top:1px dashed var(--line); white-space:pre-wrap; word-break:break-word;
+               font-size:12.5px; max-height:320px; overflow:auto; }
+  .big { font-size:30px; font-weight:800; } .callout { background:var(--warn-soft); border:1px solid #6b5216; border-radius:10px; padding:10px 12px; font-size:14px; }
+</style>
+</head>
+<body>
+<header>
+  <div class="top">
+    <div class="brand">Loom on Databricks<small>new storage layer · synthetic data</small></div>
+    <div class="personas" style="visibility:hidden"><span class="lbl">Acting as</span><span id="personas"></span></div>
+  </div>
+  <nav class="tabs" id="tabs">
+    <button data-p="demo" class="on">Guided demo</button>
+    <span style="color:var(--line);padding:10px 4px">|</span>
+    <span class="small muted" style="padding:12px 4px 0">Explore:</span>
+    <button data-p="ask">Ask</button>
+    <button data-p="memory">Memory</button>
+    <button data-p="contribute">Contribute</button>
+    <button data-p="admin">Admin</button>
+    <button data-p="arch">Architecture</button>
+  </nav>
+</header>
+
+<main>
+  <!-- identity strip (all consumer tabs) -->
+  <div class="card" id="whocard" style="display:none">
+    <div class="who" id="who"><span class="spinner"></span> resolving identity…</div>
+  </div>
+
+  <!-- ================= GUIDED DEMO ================= -->
+  <section class="page on" id="p-demo">
+    <div class="story">
+      <div class="stepnav" id="stepnav"></div>
+      <div class="card" id="stepcard"></div>
+    </div>
+  </section>
+
+  <!-- ================= ASK ================= -->
+  <section class="page" id="p-ask">
+    <div class="card">
+      <div class="qbar">
+        <input type="text" id="query" value="What is the daily withdrawal limit for retail customers?" onkeydown="if(event.key==='Enter')retrieve()">
+        <div class="scope" title="Optional. Narrows which project/team spaces are considered. Never grants access.">
+          <span class="small muted">Scope</span>
+          <select id="hint-project"><option value="">any project</option><option>atlas</option><option>borealis</option></select>
+          <select id="hint-team"><option value="">any team</option><option>risk</option><option>care</option><option>markets</option></select>
+        </div>
+        <button class="go" id="go" onclick="retrieve()">Retrieve</button>
+      </div>
+      <div class="examples" id="examples"></div>
+      <details class="help"><summary>What is scope?</summary>Optional. With "any", Loom composes every project and team space you belong to.
+        Picking a project or team narrows composition to that one; the others show as <i>not selected</i>. Scope never grants access:
+        a space you are not a member of shows as excluded.</details>
+    </div>
+    <div class="grid">
+      <div class="card">
+        <h3>Answer context <span class="muted small" id="rmeta"></span>
+          <span class="tag loom" style="margin-left:auto">composed in Loom</span>
+          <a class="tag dbx" target="_blank" href="https://docs.databricks.com/aws/en/oltp/projects/lakebase-search">Lakebase Search ↗</a>
+          <a class="tag dbx" target="_blank" href="https://docs.databricks.com/aws/en/agents/agent-memory/managed-memory">Managed memory ↗</a></h3>
+        <div id="results"><div class="empty">Ask a question to see composed results. Click a result for full text and scores.</div></div>
+      </div>
+      <div class="card">
+        <div class="subtabs" id="side">
+          <button data-s="why" class="on">Why these spaces</button>
+          <button data-s="conflicts">Conflicts <span class="count" id="ccount">0</span></button>
+          <button data-s="timing">Timing</button>
+        </div>
+        <div id="s-why" class="side on"><div class="empty">The composition trace appears here.</div></div>
+        <div id="s-conflicts" class="side" style="display:none"><div class="empty">Conflicting facts and how Loom resolved them.</div></div>
+        <div id="s-timing" class="side" style="display:none"><div class="empty">—</div></div>
+      </div>
+    </div>
+    <div class="card" id="q-ask" style="display:none"></div>
+  </section>
+
+  <!-- ================= MEMORY ================= -->
+  <section class="page" id="p-memory">
+    <div class="grid2">
+      <div class="card">
+        <h3>1 · Save a preference in session A <a class="tag dbx" target="_blank" href="https://docs.databricks.com/aws/en/agents/agent-memory/managed-sessions">Managed sessions ↗</a></h3>
+        <input type="text" id="pref" style="width:100%" value="I want incident summaries as three bullet points.">
+        <div style="margin-top:10px"><button class="go" onclick="savePref(event)">Save</button></div>
+        <div class="out" id="m-save"></div><div id="m-save-q"></div>
+      </div>
+      <div class="card">
+        <h3>2 · Recall it in a brand-new session B <a class="tag dbx" target="_blank" href="https://docs.databricks.com/aws/en/agents/agent-memory/managed-memory">Managed memory (BM25) ↗</a></h3>
+        <input type="text" id="recall" style="width:100%" value="how should incident summaries be formatted">
+        <div style="margin-top:10px"><button class="go" onclick="recall(event)">Recall</button></div>
+        <div class="out" id="m-recall"></div><div id="m-recall-q"></div>
+      </div>
+    </div>
+    <div class="card small muted">Each space has its own managed memory store (store-level ACL). Loom decides which stores a caller may query and
+      sets <span class="mono">actor_id</span> from the verified identity. Switch persona and recall again: other users never see your personal store.</div>
+  </section>
+
+  <!-- ================= CONTRIBUTE ================= -->
+  <section class="page" id="p-contribute">
+    <div class="grid2">
+      <div class="card">
+        <h3>Contribute <span class="tag loom">policy · guardrails · conflict check in Loom</span></h3>
+        <div class="kv">
+          <label>Content</label><textarea id="c-content" rows="3">Atlas batcher pages on-call when the signer queue exceeds 250 requests.</textarea>
+          <label>Subject key</label><input id="c-subject" value="atlas.batcher_page">
+          <label>Kind</label><select id="c-kind"><option>fact</option><option>lesson</option></select>
+          <label>Target space</label><select id="c-target"></select>
+          <label>Propose promotion to</label><select id="c-promote"></select>
+        </div>
+        <div style="margin-top:12px"><button class="go" onclick="contribute(event)">Contribute</button></div>
+        <div class="out" id="c-out"></div><div id="c-out-q"></div>
+      </div>
+      <div class="card">
+        <h3>What happens</h3>
+        <div class="steps small">
+          <div class="step"><b>Policy:</b> you need write on the target space (default: your personal space).</div>
+          <div class="step"><b>Guardrails:</b> the space's write rules run (allowed kinds, size, blocked patterns such as secrets, rate limit, redaction).</div>
+          <div class="step"><b>Conflict check:</b> facts with the same subject in spaces you can read are compared. A contradiction of higher authority in a shared space is held for review.</div>
+          <div class="step"><b>Promotion (optional):</b> creates a request. It only applies when someone else with write on the target approves it (Admin → Promotions).</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= ADMIN ================= -->
+  <section class="page" id="p-admin">
+    <div class="card">
+      <div class="subtabs" id="adm">
+        <button data-a="spaces" class="on">Spaces & policies</button>
+        <button data-a="promotions">Promotions <span class="count" id="pcount">0</span></button>
+        <button data-a="conflog">Conflict log</button>
+        <button data-a="audit">Audit</button>
+        <button data-a="pipelines">Pipelines</button>
+        <button data-a="ports">Storage ports</button>
+      </div>
+      <div id="a-spaces" class="adm">
+        <div id="spaces"></div>
+        <details style="margin-top:14px"><summary><b>Create / update a space</b> <span class="tag loom">configure (admin only)</span></summary>
+          <textarea id="cfg" rows="7" style="width:100%;margin-top:8px" class="mono">{"space": {"scope": "project", "key": "demo", "name": "Live demo project", "owner": "alice"},
+ "members": [{"principal": "alice", "kind": "user", "perm": "write"}, {"principal": "loom-support", "kind": "group", "perm": "read"}],
+ "guardrails": {"read": {"max_items": 4}, "write": {"allowed_kinds": ["fact", "lesson"]}},
+ "bindings": ["kb", "memory"]}</textarea>
+          <div style="margin-top:8px">as <select id="cfg-as"><option>admin</option><option>bob</option><option>carol</option></select>
+            <button class="go secondary" onclick="configure()">configure</button> <span id="cfgout" class="small"></span></div>
+        </details>
+      </div>
+      <div id="a-promotions" class="adm" style="display:none"></div>
+      <div id="a-conflog" class="adm" style="display:none"></div>
+      <div id="a-audit" class="adm" style="display:none"></div>
+      <div id="a-pipelines" class="adm" style="display:none">
+        <div class="grid2">
+          <div class="card"><h3>Freshness <span class="tag loom">ingest pipeline</span> <a class="tag dbx" target="_blank" href="https://docs.databricks.com/aws/en/volumes/">UC Volume ↗</a></h3>
+            <div class="small muted">Edits one synced source, deletes another, runs the incremental ingest, then polls retrieve until the edit is searchable.</div>
+            <div style="margin-top:10px"><button class="go" onclick="runJob('freshness-edit')">Run freshness test</button></div>
+            <div class="out" id="job-freshness"></div><div class="small" id="joblink-ingest" style="margin-top:8px"></div></div>
+          <div class="card"><h3>Distillation <span class="tag loom">pipeline</span> <a class="tag dbx" target="_blank" href="https://docs.databricks.com/aws/en/machine-learning/foundation-model-apis/supported-models">Hosted LLM ↗</a></h3>
+            <div class="small muted">Reads incident transcripts from managed sessions and writes a markdown lesson to staging, with a promotion request.</div>
+            <div style="margin-top:10px"><button class="go" onclick="runJob('distill')">Distill transcripts</button></div>
+            <div class="out" id="job-distill"></div><div class="small" id="joblink-distill" style="margin-top:8px"></div></div>
+        </div>
+        <div class="card"><h3>In-region benchmark</h3>
+          <div class="small muted">Runs bench/benchmark.py inside the app (us-east-1). Takes about 5 minutes.</div>
+          <div style="margin-top:10px"><button class="go secondary" onclick="runJob('bench')">Run benchmark</button></div>
+          <div class="out" id="job-bench"></div><div class="small" id="joblink-bench" style="margin-top:8px"></div></div>
+        <div class="card"><h3>Retrieval evaluation <a class="tag dbx" target="_blank" href="https://docs.databricks.com/aws/en/mlflow3/genai/eval-monitor/">MLflow evaluation ↗</a></h3>
+          <div class="small muted">MLflow evaluation of composed retrieval over the labeled questions, as a scheduled-style Databricks job.</div>
+          <div class="small" id="joblink-eval" style="margin-top:8px"></div></div>
+      </div>
+      <div id="a-ports" class="adm" style="display:none"></div>
+    </div>
+  </section>
+
+  <!-- ================= ARCHITECTURE ================= -->
+  <section class="page arch" id="p-arch">
+    <div class="card"><h3>Architecture</h3><img src="/static/architecture.svg" alt="architecture"></div>
+    <div class="card"><h3>What happens on retrieve</h3><img src="/static/retrieve_flow.svg" alt="retrieve flow"></div>
+  </section>
+</main>
+
+<script>
+const PERSONAS = {
+  alice: {color:"#7c3aed", role:"Compliance · team Risk · project Atlas"},
+  bob:   {color:"#2563eb", role:"Support · team Care · project Atlas"},
+  carol: {color:"#059669", role:"Trading ops · team Markets · project Borealis"},
+  service:{color:"#6b7280", role:"Batch service (distillation staging)"},
+  admin: {color:"#111827", role:"Platform admin (configure only)"},
+};
+const EXAMPLES = ["What is the daily withdrawal limit for retail customers?", "ETH withdrawal queue stuck after a node upgrade, signer timing out",
+  "escalate potential sanctions hits", "card refunds post business days", "withdrawals v2 batch window", "primary market data feed is lagging"];
+let persona = "bob", lastWho = null;
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+async function api(path, body) {
+  const r = await fetch(path, body ? {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(body)} : {});
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error((typeof j.detail === "string" ? j.detail : JSON.stringify(j.detail || "")) || `HTTP ${r.status} ${r.statusText || "error"}`);
+  return j;
+}
+
+/* ---------- navigation */
+document.querySelectorAll("#tabs button").forEach(b => b.onclick = () => {
+  document.querySelectorAll("#tabs button").forEach(x => x.classList.toggle("on", x === b));
+  document.querySelectorAll(".page").forEach(p => p.classList.toggle("on", p.id === "p-" + b.dataset.p));
+  $("whocard").style.display = ["admin","arch","demo"].includes(b.dataset.p) ? "none" : "";
+  document.querySelector(".personas").style.visibility = ["arch","demo"].includes(b.dataset.p) ? "hidden" : "visible";
+  if (b.dataset.p === "admin") refreshAdmin();
+});
+function wireSub(container, attr, prefix, cls) {
+  document.querySelectorAll(`#${container} button`).forEach(b => b.onclick = () => {
+    document.querySelectorAll(`#${container} button`).forEach(x => x.classList.toggle("on", x === b));
+    document.querySelectorAll("." + cls).forEach(p => p.style.display = p.id === prefix + b.dataset[attr] ? "" : "none");
+  });
+}
+wireSub("side", "s", "s-", "side"); wireSub("adm", "a", "a-", "adm");
+
+/* ---------- persona + identity */
+function renderPersonas() {
+  $("personas").innerHTML = ["alice","bob","carol","service"].map(p =>
+    `<button class="pbtn ${p===persona?"on":""}" onclick="pick('${p}')" title="${esc(PERSONAS[p].role)}">
+       <span class="av" style="background:${PERSONAS[p].color}">${p[0].toUpperCase()}</span>${p}</button>`).join("");
+}
+async function pick(p) {
+  persona = p; renderPersonas();
+  $("who").innerHTML = `<span class="spinner"></span> resolving ${p}…`;
+  try {
+    const w = await api("/ui/whoami?persona=" + p); lastWho = w;
+    const readable = w.spaces.filter(s => s.read);
+    $("who").innerHTML = `<b style="font-size:16px">${esc(w.principal)}</b>
+      <span class="muted">${esc(PERSONAS[p].role)}</span>
+      <span class="chip">groups: ${esc(w.groups.join(", ") || "none")}</span>
+      <span class="muted small" style="margin-left:8px">can read</span>
+      ${readable.map(s => `<span class="chip ${s.write ? "write" : "read"}" title="${esc(s.via)}">${esc(s.space_id)}${s.write ? " ✎" : ""}</span>`).join("")}
+      <span class="muted small" style="margin-left:auto">token verified by Databricks · ✎ = can write</span>`;
+    fillTargets(w);
+  } catch (e) { $("who").innerHTML = `<span class="bad">${esc(e.message)}</span>`; }
+}
+const SCOPE_RANK = {personal:0, project:1, team:2, company:3};
+function fillTargets(w) {
+  const writable = w.spaces.filter(s => s.write);
+  $("c-target").innerHTML = writable.map(s => `<option value="${esc(s.space_id)}" data-scope="${s.scope}" ${s.scope === "personal" ? "selected" : ""}>${esc(s.space_id)}</option>`).join("");
+  $("c-target").onchange = () => fillPromote(w);
+  fillPromote(w);
+}
+function fillPromote(w) {   // promotion only goes to a higher scope than the target
+  const opt = $("c-target").selectedOptions[0]; const rank = SCOPE_RANK[opt ? opt.dataset.scope : "personal"];
+  const higher = w.spaces.filter(s => s.read && SCOPE_RANK[s.scope] > rank).map(s => s.space_id);
+  $("c-promote").innerHTML = `<option value="">no promotion</option>` + higher.map(s => `<option ${s === "project:atlas" ? "selected" : ""}>${esc(s)}</option>`).join("");
+}
+
+/* ---------- show queries: the SQL and REST calls behind one click, captured server-side */
+const TABLE_RE = /\b(?:FROM|JOIN|INTO|UPDATE)\s+(loom\.\w+)/gi;
+function queryPanel(qs) {
+  if (!qs || !qs.length) return "";
+  const sql = qs.filter(q => q.kind === "sql"), rest = qs.filter(q => q.kind === "rest");
+  const tables = [...new Set(sql.flatMap(q => [...q.text.matchAll(TABLE_RE)].map(m => m[1])))];
+  const stores = [...new Set(rest.map(q => (q.text.match(/(?:memory|session)-stores\/([^/?\s]+)/) || [])[1]).filter(Boolean))];
+  const models = [...new Set(rest.map(q => (q.text.match(/serving-endpoints\/([^/?\s]+)/) || [])[1]).filter(Boolean))];
+  const chips = (label, xs) => xs.length ? `<span class="muted">${label}</span>` + xs.map(x => `<span class="chip mono">${esc(x)}</span>`).join("") : "";
+  const call = q => `<div class="qcall ${q.kind}"><div class="qh">
+      <span class="badge ${q.kind === "sql" ? "kb" : q.kind === "rest" ? "sup" : ""}">${q.kind === "note" ? "cache" : q.kind.toUpperCase()}</span>
+      <b>${esc(q.target)}</b><span class="muted">starts +${q.at_ms} ms · ${q.ms} ms${q.detail ? " · " + esc(q.detail) : ""}</span>
+      ${q.ok ? "" : `<span class="badge red">failed</span>`}</div><pre class="mono">${esc(q.text)}</pre></div>`;
+  return `<details class="queries"><summary>Show queries · ${sql.length} SQL · ${rest.length} REST</summary>
+    <div class="qsum">${chips("Lakebase tables", tables)} ${chips("stores", stores)} ${chips("models", models)}</div>
+    <div class="small muted">Captured in the app for this click, in start order (overlapping start times ran in parallel).
+      Parameters are inlined for display; embedding vectors are abbreviated.</div>
+    ${qs.slice().sort((a, b) => a.at_ms - b.at_ms).map(call).join("")}</details>`;
+}
+
+/* ---------- ask */
+$("examples").innerHTML = EXAMPLES.map(q => `<button onclick='$("query").value=${JSON.stringify(q)};retrieve()'>${esc(q)}</button>`).join("");
+function title(x) {
+  const p = x.provenance;
+  if (p.backend === "memory" && (p.path || "").startsWith("/facts/")) return "Fact · " + p.path.split("/")[2];
+  if (p.backend === "sessions") return "Current session";
+  return p.extra.title || (p.path || "").split("/").pop() || p.backend;
+}
+function snippet(x) {   // drop the repeated title / markdown heading at the start of KB chunks
+  let t = x.content.replace(/\s+/g, " ").trim();
+  const ti = title(x);
+  if (t.startsWith(ti)) t = t.slice(ti.length).trim();
+  return t.replace(/^#+\s*[^#]*?\(synthetic\)\s*/, "").replace(/^#+\s*/, "");
+}
+function resultCard(x, i) {
+  const p = x.provenance, s = x.score;
+  const full = snippet(x), snip = full.slice(0, 190);
+  return `<div class="res ${p.backend} ${x.superseded_by ? "superseded" : ""}" onclick="this.classList.toggle('open')">
+    <div class="head"><span class="muted small">${i + 1}</span><span class="title">${esc(title(x))}</span>
+      <span class="badge ${p.backend}">${p.backend === "kb" ? "knowledge base" : p.backend}</span>
+      <span class="badge">${esc(p.space_id)}</span><span class="badge">authority: ${esc(p.authority)}</span>
+      ${x.superseded_by ? `<span class="badge sup">superseded</span>` : ""}
+      ${x.redactions.length ? `<span class="badge red">redacted</span>` : ""}</div>
+    <div class="snip">${esc(snip)}${full.length > 190 ? "…" : ""}</div>
+    <div class="more">
+      <div class="scores"><span>vector rank <b>${s.vector_rank ?? "–"}</b></span><span>BM25 rank <b>${s.bm25_rank ?? "–"}</b></span>
+        ${s.memory_bm25 != null ? `<span>memory BM25 <b>${s.memory_bm25.toFixed(2)}</b></span>` : ""}<span>fused (RRF) <b>${s.fused.toFixed(4)}</b></span></div>
+      <div class="small muted" style="margin-top:4px">${esc(p.path || p.ref)}${p.version ? " · v" + p.version : ""}
+        ${p.extra.source_sessions ? " · distilled from " + esc(p.extra.source_sessions.join(", ")) : ""}
+        ${x.redactions.length ? " · " + esc(x.redactions.join("; ")) : ""}</div>
+      <pre class="content">${esc(x.content)}</pre></div></div>`;
+}
+async function retrieve() {
+  $("go").disabled = true; $("q-ask").style.display = "none"; $("results").innerHTML = `<div class="empty"><span class="spinner"></span> composing…</div>`;
+  const t0 = performance.now();
+  try {
+    const r = await api("/ui/retrieve", {persona, query:$("query").value, project:$("hint-project").value, team:$("hint-team").value, k:8});
+    $("rmeta").textContent = `${r.results.length} results for ${persona}`;
+    $("q-ask").innerHTML = queryPanel(r.queries); $("q-ask").style.display = r.queries && r.queries.length ? "" : "none";
+    $("results").innerHTML = r.results.map(resultCard).join("") || `<div class="empty">No results.</div>`;
+    // why
+    const inc = r.trace.considered.filter(v => v.included), exc = r.trace.considered.filter(v => !v.included);
+    $("s-why").innerHTML = `<div class="small muted" style="margin-bottom:6px">${inc.length} spaces composed, ${exc.length} excluded</div>` +
+      r.trace.considered.map(v => `<div class="sp"><span class="dot ${v.included ? "in" : "out"}"></span>
+        <div><b>${esc(v.space_id)}</b> <span class="small ${v.included ? "ok" : "bad"}">${v.included ? "included" : "excluded"}</span>
+          ${v.included ? `<span class="small muted"> · ${v.items} item${v.items === 1 ? "" : "s"}</span>` : ""}
+          <div class="small muted">${esc(v.reason)}${v.guardrails_applied.length ? " · guardrails: " + esc(v.guardrails_applied.join("; ")) : ""}</div></div></div>`).join("");
+    // conflicts
+    $("ccount").textContent = r.trace.conflicts.length;
+    $("s-conflicts").innerHTML = r.trace.conflicts.map(c => {
+      const cands = [c.winner, ...c.losers].filter(Boolean);
+      return `<div class="conf"><div><b>${esc(c.subject)}</b></div>
+        <div class="small" style="margin:4px 0"><span class="rule">${c.outcome === "resolved" ? "Resolved by " + esc(c.rule.replace("_", " ")) : "Needs human review (tie)"}</span></div>
+        ${cands.map(x => `<div class="cand"><span class="${c.winner && x.ref === c.winner.ref ? "win" : (c.winner ? "lose" : "")}">${c.winner && x.ref === c.winner.ref ? "✓" : "·"}</span>
+          <span><span class="${c.winner && x.ref !== c.winner.ref ? "lose" : ""}">${esc(x.statement)}</span>
+          <span class="muted small"> · ${esc(x.authority)} @ ${esc(x.space_id)} · ${esc(x.observed_at.slice(0, 10))}</span></span></div>`).join("")}
+        <div class="small muted" style="margin-top:6px">${esc(c.rationale)}</div>
+        ${c.flags.length ? `<div class="small" style="color:var(--warn)">⚑ ${esc(c.flags.join("; "))}</div>` : ""}</div>`;
+    }).join("") || `<div class="empty">No conflicting facts in these results.</div>`;
+    // timing
+    const t = r.trace.timings_ms;
+    $("s-timing").innerHTML = `<table>${Object.entries(t).map(([k, v]) => `<tr><td>${esc(k.replace("_", " "))}</td><td style="text-align:right">${v} ms</td></tr>`).join("")}
+      <tr><td>browser round trip</td><td style="text-align:right">${Math.round(performance.now() - t0)} ms</td></tr></table>
+      <div class="small muted" style="margin-top:6px">Server timings are measured in the app (us-east-1).</div>`;
+  } catch (e) { $("results").innerHTML = `<div class="bad">${esc(e.message)}</div>`; }
+  $("go").disabled = false;
+}
+
+/* ---------- memory */
+const sid = () => "web-" + Math.random().toString(36).slice(2, 8);
+let savedTag = null;
+async function busy(btn, out, label, fn) {   // visible progress + elapsed time + errors for slow calls
+  btn.disabled = true; const t0 = performance.now();
+  out.innerHTML = `<span class="spinner"></span> ${label}…`;
+  try { await fn(((performance.now() - t0) / 1000)); }
+  catch (e) { out.innerHTML = `<span class="bad">Failed:</span> ${esc(e.message)}`; }
+  finally { btn.disabled = false; }
+  return (performance.now() - t0) / 1000;
+}
+async function savePref(ev) {
+  const s = sid(); savedTag = s.slice(-4); const t0 = performance.now();
+  $("m-save-q").innerHTML = "";
+  await busy(ev.target, $("m-save"), `Saving as ${persona} (policy, guardrails, conflict check)`, async () => {
+    const r = await api("/ui/contribute", {persona, content:$("pref").value + ` (${savedTag})`, subject:"preference.summary_format." + savedTag, session_id:s});
+    const secs = ((performance.now() - t0) / 1000).toFixed(1);
+    $("m-save").innerHTML = r.status === "stored"
+      ? `<span class="ok">Saved</span> as <b>${esc(persona)}</b> in session <span class="mono">${s}</span> → memory store of <b>${esc(r.space_id)}</b> <span class="muted small">(${secs} s)</span>`
+      : `<span class="bad">${esc(r.status)}</span> ${esc(r.reason)}`;
+    $("m-save-q").innerHTML = queryPanel(r.queries);
+  });
+}
+async function recall(ev) {
+  const s = sid(); const t0 = performance.now();
+  $("m-recall-q").innerHTML = "";
+  await busy(ev.target, $("m-recall"), `Recalling as ${persona} in a new session`, async () => {
+    const r = await api("/ui/retrieve", {persona, query:$("recall").value, session_id:s, k:6});
+    const m = r.results.filter(x => x.provenance.backend === "memory");
+    const secs = ((performance.now() - t0) / 1000).toFixed(1);
+    $("m-recall").innerHTML = `New session <span class="mono">${s}</span> as <b>${esc(persona)}</b> <span class="muted small">(${secs} s)</span>:` +
+      (m.length ? m.map(x => `<div class="res memory" style="cursor:default;margin-top:8px"><div class="head"><span class="badge memory">memory</span>
+        <span class="badge">${esc(x.provenance.space_id)}</span>${savedTag && x.content.includes(savedTag) ? `<span class="badge sup">just saved</span>` : ""}</div>
+        <div class="snip">${esc(x.content)}</div></div>`).join("")
+               : `<div class="muted" style="margin-top:6px">Nothing recalled for this persona. Memory is per space: switch back to the persona that saved it.</div>`);
+    $("m-recall-q").innerHTML = queryPanel(r.queries);
+  });
+}
+
+/* ---------- contribute */
+async function contribute(ev) {
+  const btn = ev && ev.target; if (btn) btn.disabled = true;
+  $("c-out-q").innerHTML = "";
+  $("c-out").innerHTML = `<span class="spinner"></span> Contributing as ${esc(persona)} (policy, guardrails, conflict check)…`;
+  try {
+    const r = await api("/ui/contribute", {persona, content:$("c-content").value, subject:$("c-subject").value, kind:$("c-kind").value,
+      target_space:$("c-target").value, propose_promotion_to:$("c-promote").value});
+    const cls = r.status === "rejected" ? "bad" : "ok";
+    $("c-out").innerHTML = `<div><span class="${cls}">${esc(r.status.replaceAll("_", " "))}</span> → ${esc(r.space_id)}</div>
+      ${r.reason ? `<div class="small muted">${esc(r.reason)}</div>` : ""}
+      ${r.guardrail_actions.length ? `<div class="small">guardrails: ${esc(r.guardrail_actions.join("; "))}</div>` : ""}
+      ${r.conflict ? `<div class="small">conflict: ${esc(r.conflict.rule)} · ${esc(r.conflict.rationale)}</div>` : ""}
+      ${r.promotion_request_id ? `<div class="small">promotion request created. Approve it in <b>Admin → Promotions</b>.</div>` : ""}`;
+    $("c-out-q").innerHTML = queryPanel(r.queries);
+  } catch (e) { $("c-out").innerHTML = `<span class="bad">Failed:</span> ${esc(e.message)}`; }
+  if (btn) btn.disabled = false;
+}
+
+/* ---------- admin */
+async function configure() {
+  try { const r = await api("/ui/configure", {persona:$("cfg-as").value, request:JSON.parse($("cfg").value)});
+    $("cfgout").innerHTML = `<span class="ok">${r.created ? "created" : "updated"} ${esc(r.space_id)}</span>`; refreshAdmin();
+  } catch (e) { $("cfgout").innerHTML = `<span class="bad">${esc(e.message)}</span>`; }
+}
+async function decide(id, approver) {
+  try { await api("/ui/promotions/decide", {persona:approver, promotion_id:id, approve:true}); refreshAdmin(); }
+  catch (e) { alert(e.message); }
+}
+async function runJob(j) { const k = j === "freshness-edit" ? "freshness" : j; $("job-" + k).innerHTML = `<span class="spinner"></span> running…`;
+  await api("/ui/run/" + j, {}); pollJobs(); }
+function jobView(k, v) {
+  if (v.status === "running") return `<span class="spinner"></span> running…`;
+  if (v.status === "error") return `<span class="bad">error</span> <span class="small">${esc(v.error)}</span>`;
+  const r = v.result || {};
+  if (k === "freshness") return `<div class="kv"><span>change → searchable</span><b>${r.change_to_searchable_s ?? "not found"} s</b>
+     <span>ingest job</span><b>${r.ingest_s} s</b></div><table style="margin-top:8px"><tr><th>file</th><th>action</th><th>re-embedded</th><th>removed</th></tr>
+     ${(r.files || []).map(f => `<tr><td class="mono">${esc(f.path)}</td><td>${esc(f.action)}</td><td>${f.chunks_embedded}</td><td>${f.chunks_deleted}</td></tr>`).join("")}</table>`;
+  if (k === "distill") return `<div class="kv"><span>transcripts</span><b>${r.transcripts}</b><span>job</span><b>${r.job_s} s</b></div>` +
+     (r.lessons || []).map(l => `<div class="conf" style="margin-top:8px"><b>${esc(l.title)}</b><div class="small">${esc(l.status)} → proposed for ${esc(l.proposed_scope)} · confidence ${l.confidence}</div>
+       <div class="small muted">from ${esc((l.source_sessions || []).join(", "))}</div></div>`).join("") + `<div class="small">${(r.facts || []).length} facts staged. Approve the lesson in Promotions.</div>`;
+  if (k === "bench") return `<pre class="content" style="max-height:420px">${esc(r.markdown || "")}</pre>`;
+  return `<pre class="content">${esc(JSON.stringify(v, null, 1))}</pre>`;
+}
+const JOB_NOTE = {ingest:"The button runs the same incremental ingest inside the app; this job runs it on serverless.",
+  distill:"The button runs the same distillation inside the app; this job runs it on serverless.",
+  bench:"The button runs the benchmark inside the app; this job runs it on serverless.", eval:""};
+let jobLinksDone = false;
+async function renderJobLinks() {
+  if (jobLinksDone) return;
+  try {
+    const jobs = (await api("/ui/meta")).jobs || {};
+    for (const k of Object.keys(JOB_NOTE)) {
+      const el = $("joblink-" + k), j = jobs[k]; if (!el) continue;
+      el.innerHTML = j ? `<a class="tag dbx" target="_blank" href="${esc(j.url)}">Databricks job: ${esc(j.name)} ↗</a>
+        <span class="muted">${esc(JOB_NOTE[k])}</span>` : `<span class="muted">Job ${esc(k)} not found in this workspace.</span>`;
+    }
+    jobLinksDone = true;
+  } catch (e) { /* links are optional; retry on next Admin refresh */ }
+}
+async function pollJobs() {
+  const jobs = await api("/ui/admin/jobs");
+  for (const [k, v] of Object.entries(jobs)) { const el = $("job-" + k); if (el) el.innerHTML = jobView(k, v); }
+  if (Object.values(jobs).some(v => v.status === "running")) setTimeout(pollJobs, 2500);
+}
+async function refreshAdmin() {
+  const [spaces, promos, confs, auditQ, ports] = await Promise.all(["spaces","promotions","conflicts","audit?with_queries=true","ports"].map(x => api("/ui/admin/" + x)));
+  const audit = auditQ.rows;
+  $("spaces").innerHTML = `<table><tr><th>space</th><th>members</th><th>read guardrails</th><th>write guardrails</th><th>bound to</th></tr>` + spaces.map(s =>
+    `<tr><td><b>${esc(s.space_id)}</b><div class="small muted">${esc(s.name)}</div></td>
+      <td class="small">${s.members.map(m => `<span class="chip">${esc((m.kind === "group" ? "group " : "") + m.principal)} · ${esc(m.perm)}</span>`).join(" ")}</td>
+      <td class="small mono">${esc(Object.keys(s.guardrails.read || {}).join(", ") || "—")}</td>
+      <td class="small mono">${esc(Object.keys(s.guardrails.write || {}).join(", ") || "—")}</td>
+      <td class="small mono">${Object.entries(s.bindings).map(([k, v]) => `<div><span class="muted">${esc(k)}:</span> ${esc(v)}</div>`).join("")}</td></tr>`).join("") + "</table>";
+  const pending = promos.filter(p => p.status === "pending");
+  $("pcount").textContent = pending.length;
+  $("a-promotions").innerHTML = promos.slice(0, 15).map(p => `<div class="conf"><div><b>${esc(p.kind)}</b> ${esc(p.source_space)} → <b>${esc(p.target_space)}</b>
+      <span class="badge ${p.status === "approved" ? "memory" : p.status === "pending" ? "sup" : "red"}">${esc(p.status)}</span>
+      <span class="small muted">proposed by ${esc(p.proposer)}${p.approver ? " · approved by " + esc(p.approver) : ""}</span></div>
+      <div class="small" style="margin:4px 0">${esc((p.payload.content || "").replace(/^---[\s\S]*?---/, "").slice(0, 220))}</div>
+      ${p.status === "pending" ? ["alice","bob","carol"].map(a => `<button class="examples" style="border:1px solid var(--line);border-radius:999px;padding:3px 10px;background:var(--card2);cursor:pointer" onclick="decide('${p.request_id}','${a}')">approve as ${a}</button>`).join(" ") : ""}</div>`).join("")
+    || `<div class="empty">No promotion requests.</div>`;
+  $("a-conflog").innerHTML = `<table><tr><th>subject</th><th>outcome</th><th>rule</th><th>rationale</th></tr>` + confs.slice(0, 25).map(c =>
+    `<tr><td class="mono">${esc(c.subject)}</td><td>${esc(c.outcome)}</td><td>${esc(c.rule)}</td><td class="small">${esc(c.rationale)}</td></tr>`).join("") + "</table>";
+  $("a-audit").innerHTML = `<table><tr><th>time</th><th>surface</th><th>caller</th><th>action</th><th>space</th><th>decision</th></tr>` + audit.slice(0, 40).map(a =>
+    `<tr><td class="mono">${esc(String(a.ts).slice(11, 19))}</td><td>${esc(a.surface)}</td><td>${esc(a.caller)}</td><td>${esc(a.action)}</td>
+      <td>${esc(a.space_id || "")}</td><td class="${a.decision === "excluded" || a.decision === "denied" || a.decision === "rejected" ? "bad" : ""}">${esc(a.decision)}</td></tr>`).join("") +
+    `</table><div class="small muted" style="margin-top:6px">memory_audit streams to Delta via <a target="_blank" href="https://docs.databricks.com/aws/en/oltp/projects/lakebase-cdf">Lakebase CDF ↗</a></div>` +
+    queryPanel(auditQ.queries);
+  $("a-ports").innerHTML = `<div class="small muted" style="margin-bottom:8px">Internal view: consumers only see the contract. This shows which port each recent call used and which Databricks backend served it.</div>
+    <table><tr><th>port</th><th>backend</th><th>method</th><th style="text-align:right">ms</th></tr>` + ports.slice(-40).reverse().map(p =>
+    `<tr><td>${esc(p.port)}</td><td>${esc(p.backend)}</td><td class="mono">${esc(p.method)}</td><td style="text-align:right">${p.ms}</td></tr>`).join("") + "</table>";
+  pollJobs(); renderJobLinks();
+}
+
+/* ---------- guided demo */
+const L = {c:"Consumer", l:"Loom control plane", p:"Storage ports", d:"Databricks"};
+const STEPS = [
+ {t:"Who is asking", layers:{c:"Agent / web / service", l:"Identity · space policy", d:"Databricks OAuth (SCIM)"},
+  say:"Every request carries a real Databricks token. Loom turns it into a person and the spaces they belong to.",
+  notice:"Click Alice, Bob, or Carol. Each persona can read a different set of spaces, and the model never chooses who it is.", run:stepWho},
+ {t:"Same question, different answers", layers:{c:"retrieve()", l:"Composer · policy · guardrails", p:"SearchPort · MemoryPort", d:"Lakebase Search · managed memory"},
+  say:"Alice (compliance) and Bob (support) ask the same question. Loom composes each answer from only the spaces that person may read.",
+  notice:"Look at which spaces are included or excluded, and note that content is never copied between spaces.", run:stepCompose, btn:"Ask both"},
+ {t:"When facts disagree", layers:{c:"retrieve()", l:"Conflict resolver", p:"SearchPort · MemoryPort", d:"Lakebase (policy docs) · managed memory (notes)"},
+  say:"Bob's personal note says $25,000. The official policy says $50,000. Loom resolves it by source authority, then time.",
+  notice:"The newer personal note loses to the official policy, and Loom records why and flags that the losing note is newer.", run:stepConflict, btn:"Ask Bob"},
+ {t:"Memory follows the person", layers:{c:"contribute() · retrieve()", l:"Picks the right store", p:"MemoryPort · SessionPort", d:"Managed memory (one store per space) · sessions"},
+  say:"Bob saves a preference in one conversation and gets it back in a brand-new one. Alice never sees it.",
+  notice:"Managed memory isolates by store; Loom decides which stores a caller may query.", run:stepMemory, btn:"Save, recall, check Alice"},
+ {t:"Fresh knowledge in seconds", layers:{c:"(source sync)", l:"Ingest pipeline", p:"StoragePort · SearchPort", d:"UC Volume · Lakebase · Lakebase Search · embeddings"},
+  say:"A runbook is edited and another is deleted. Only the changed part is re-embedded, and it is searchable within seconds.",
+  notice:"Measured live, from the source edit to searchable:", run:stepFresh, btn:"Edit + delete, then search"},
+ {t:"Agents learn from incidents", layers:{c:"retrieve()", l:"Distillation · promotion", p:"SessionPort · StoragePort", d:"Managed sessions · hosted LLM · Lakebase Search"},
+  say:"Five past support sessions hit the same incident. A batch job turned them into a lesson, and an approver published it.",
+  notice:"A fresh agent session finds the lesson, with the sessions it came from, so it can resolve the incident without the transcripts.", run:stepLesson, btn:"Ask as a new agent session"},
+ {t:"One contract, every consumer", layers:{c:"REST · MCP · SDK", l:"configure · retrieve · contribute", p:"all ports", d:"same storage"},
+  say:"Agents (MCP), the web app (REST) and batch services (SDK) call the same three verbs and get the same answer.",
+  notice:"Behind the ports everything moved to Databricks; above them nothing changed for consumers.", run:stepParity, btn:"Run on all three"},
+];
+let cur = 0; const done = new Set();
+function renderStepNav() {
+  $("stepnav").innerHTML = STEPS.map((st, i) => `<button class="${i === cur ? "on" : ""} ${done.has(i) ? "done" : ""}" onclick="showStep(${i})">
+    <span class="n">${done.has(i) ? "✓" : i + 1}</span>${esc(st.t)}</button>`).join("") +
+    `<div class="small muted" style="margin-top:6px">Explore tabs show every detail behind each step.</div>`;
+}
+function layerStrip(on) {
+  return `<div class="layers">${Object.entries(L).map(([k, name]) => `<div class="layer ${k} ${on[k] ? "on" : ""}">
+    <div class="ln">${name}</div><div class="cm">${esc(on[k] || "not involved")}</div></div>`).join("")}</div>`;
+}
+function showStep(i) {
+  cur = i; renderStepNav(); const st = STEPS[i];
+  $("stepcard").innerHTML = `<div class="small muted">Step ${i + 1} of ${STEPS.length}</div>${layerStrip(st.layers)}
+    <p class="say">${esc(st.say)}</p><p class="notice">${esc(st.notice)}</p>
+    ${st.btn ? `<button class="go" id="stepgo">${esc(st.btn)}</button>` : ""}
+    <div id="stepout" style="margin-top:14px"></div>
+    <div style="display:flex;justify-content:space-between;margin-top:18px">
+      <button class="go secondary" ${i === 0 ? "disabled" : ""} onclick="showStep(${i - 1})">← Back</button>
+      <button class="go secondary" ${i === STEPS.length - 1 ? "disabled" : ""} onclick="showStep(${i + 1})">Next →</button></div>`;
+  if (st.btn) $("stepgo").onclick = async ev => { ev.target.disabled = true; $("stepout").innerHTML = `<span class="spinner"></span> running…`;
+    try { await st.run(); done.add(i); renderStepNav(); } catch (e) { $("stepout").innerHTML = `<span class="bad">${esc(e.message)}</span>`; }
+    ev.target.disabled = false; };
+  else st.run();
+}
+const spacesLine = r => r.trace.considered.map(v => `<span class="chip ${v.included ? "read" : ""}" style="${v.included ? "" : "opacity:.55;text-decoration:line-through"}">${esc(v.space_id)}</span>`).join(" ");
+const srcLine = x => `<div class="src"><span class="badge ${x.provenance.backend}">${x.provenance.backend === "kb" ? "doc" : x.provenance.backend}</span>
+  <b>${esc(x.provenance.space_id)}</b> · ${esc(title(x))}${x.superseded_by ? ' <span class="badge sup">superseded</span>' : ""}</div>`;
+async function stepWho() {
+  const cards = await Promise.all(["alice", "bob", "carol"].map(p => api("/ui/whoami?persona=" + p)));
+  $("stepout").innerHTML = `<div class="vs" style="grid-template-columns:repeat(3,1fr)">${cards.map(w => `<div class="mini">
+    <h4><span class="av" style="width:22px;height:22px;border-radius:50%;display:inline-grid;place-items:center;color:#fff;font-size:12px;background:${PERSONAS[w.principal].color}">${w.principal[0].toUpperCase()}</span>${esc(w.principal)}</h4>
+    <div class="small muted">${esc(PERSONAS[w.principal].role)}</div>
+    <div style="margin-top:8px">${w.spaces.filter(s => s.read).map(s => `<span class="chip read">${esc(s.space_id)}</span>`).join(" ")}</div></div>`).join("")}</div>`;
+}
+async function stepCompose() {
+  const q = "Who do I escalate potential sanctions hits to, and how fast?";
+  const [a, b] = await Promise.all(["alice", "bob"].map(p => api("/ui/retrieve", {persona:p, query:q, k:4})));
+  $("stepout").innerHTML = `<div class="small muted" style="margin-bottom:8px">“${esc(q)}”</div><div class="vs">${[["alice", a], ["bob", b]].map(([p, r]) => `<div class="mini">
+    <h4>${p}</h4><div class="small" style="margin-bottom:6px">${spacesLine(r)}</div>${r.results.map(srcLine).join("")}</div>`).join("")}</div>
+    <div class="small muted" style="margin-top:8px">Alice's answer includes her Risk team's triage doc (account numbers redacted by that space's guardrail). Bob cannot read team:risk, so it is excluded for him.</div>`;
+}
+async function stepConflict() {
+  const r = await api("/ui/retrieve", {persona:"bob", query:"What is the daily withdrawal limit for retail customers?", k:6});
+  const c = r.trace.conflicts.find(x => x.subject === "withdrawal_limit.retail.daily");
+  if (!c) { $("stepout").innerHTML = "No conflict found."; return; }
+  const loser = c.losers[0];
+  $("stepout").innerHTML = `<div class="vs"><div class="mini" style="border-color:#2ea043"><h4><span class="ok">✓ wins</span> ${esc(c.winner.authority.replace("_", " "))}</h4>
+      <div>${esc(c.winner.statement)}</div><div class="small muted">${esc(c.winner.space_id)} · effective ${esc(c.winner.observed_at.slice(0, 10))}</div></div>
+    <div class="mini"><h4><span class="bad">✗ superseded</span> ${esc(loser.authority)}</h4><div style="text-decoration:line-through;color:var(--muted)">${esc(loser.statement)}</div>
+      <div class="small muted">${esc(loser.space_id)} · ${esc(loser.observed_at.slice(0, 10))} (newer)</div></div></div>
+    <div class="callout" style="margin-top:10px"><b>Rule: ${esc(c.rule.replace("_", " "))}.</b> ${esc(c.rationale)}${c.flags.length ? "<br>⚑ The lower-authority note is newer; flagged for review." : ""}</div>`;
+}
+async function stepMemory() {
+  const tag = Math.random().toString(36).slice(2, 6);
+  const pref = `Bob wants incident summaries as three bullet points (${tag}).`;
+  const t0 = performance.now();
+  await api("/ui/contribute", {persona:"bob", content:pref, subject:"preference.summary_format." + tag, session_id:"web-A-" + tag});
+  const rb = await api("/ui/retrieve", {persona:"bob", query:"how should incident summaries be formatted " + tag, session_id:"web-B-" + tag, k:4});
+  const ra = await api("/ui/retrieve", {persona:"alice", query:"how should incident summaries be formatted " + tag, k:4});
+  const hit = r => r.results.some(x => x.content.includes(tag));
+  $("stepout").innerHTML = `<div class="vs" style="grid-template-columns:repeat(3,1fr)">
+    <div class="mini"><h4>1 · Bob, session A</h4><div class="small">saved: “${esc(pref)}”</div></div>
+    <div class="mini"><h4>2 · Bob, new session B</h4><div class="${hit(rb) ? "ok" : "bad"}">${hit(rb) ? "✓ recalled from personal:bob" : "not found"}</div></div>
+    <div class="mini"><h4>3 · Alice</h4><div class="${hit(ra) ? "bad" : "ok"}">${hit(ra) ? "✗ visible (unexpected)" : "✓ not visible to Alice"}</div></div></div>
+    <div class="small muted" style="margin-top:8px">${((performance.now() - t0) / 1000).toFixed(1)} s for all three calls</div>`;
+}
+async function stepFresh() {
+  await api("/ui/run/freshness-edit", {});
+  for (let i = 0; i < 90; i++) {
+    const j = (await api("/ui/admin/jobs")).freshness || {};
+    if (j.status === "done") { const r = j.result;
+      const emb = r.files.filter(f => f.chunks_embedded).length, skip = r.files.filter(f => f.action === "skip").length;
+      $("stepout").innerHTML = `<div class="vs" style="grid-template-columns:repeat(3,1fr)">
+        <div class="mini"><div class="small muted">edit → searchable</div><div class="big">${r.change_to_searchable_s ?? "—"} s</div></div>
+        <div class="mini"><div class="small muted">files re-embedded</div><div class="big">${emb}</div><div class="small muted">${skip} unchanged file(s) skipped</div></div>
+        <div class="mini"><div class="small muted">deleted file</div><div class="big">${r.files.some(f => f.action === "delete") ? "removed" : "—"}</div><div class="small muted">from search, history kept</div></div></div>`; return; }
+    if (j.status === "error") throw new Error(j.error);
+    await new Promise(r => setTimeout(r, 2000));
+  }
+}
+async function stepLesson() {
+  const r = await api("/ui/retrieve", {persona:"bob", query:"ETH withdrawal queue stuck after a node upgrade, signer timing out", k:4, session_id:"fresh-" + Math.random().toString(36).slice(2, 7)});
+  const les = r.results.find(x => x.content.includes("Lesson:"));
+  if (!les) { $("stepout").innerHTML = `<div class="callout">No lesson published yet. Run Explore → Admin → Pipelines → Distill, then approve it in Promotions.</div>`; return; }
+  const steps = (les.content.split(/## Resolution/i)[1] || "").replace(/\s+/g, " ").trim();
+  $("stepout").innerHTML = `<div class="mini"><h4>${esc(title(les))} <span class="badge">authority: inferred</span> <span class="badge">${esc(les.provenance.space_id)}</span></h4>
+    <div class="small"><b>Resolution:</b> ${esc(steps.slice(0, 420))}${steps.length > 420 ? "…" : ""}</div>
+    <div class="small muted" style="margin-top:6px">Distilled from ${esc((les.provenance.extra.source_sessions || []).join(", "))}</div></div>`;
+}
+async function stepParity() {
+  const r = await api("/ui/parity", {persona:"bob", query:"ETH withdrawal queue stuck after a node upgrade, signer timing out", k:5});
+  $("stepout").innerHTML = `<div class="vs" style="grid-template-columns:repeat(3,1fr)">${Object.entries(r.surfaces).map(([n, v]) => `<div class="mini">
+    <h4>${esc(n)}</h4><div class="small muted">caller: ${esc(v.caller)}</div>${v.sources.slice(0, 4).map(s => `<div class="src">${esc(s)}</div>`).join("")}</div>`).join("")}</div>
+    <div class="callout" style="margin-top:10px">${r.identical ? "<b>Identical composed answer</b> on all three surfaces." : "Answers differ (see sources)."}</div>`;
+}
+renderPersonas(); pick(persona); showStep(0);
+</script>
+</body>
+</html>
